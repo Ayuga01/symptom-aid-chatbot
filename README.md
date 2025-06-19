@@ -9,7 +9,7 @@ A web chatbot that helps users describe symptoms and get basic first-aid guidanc
 - Deployed on Netlify
 
 ## 🚀 Live Demo
-[https://rococo-haupia-46c5e9.netlify.app/](#) <!-- Replace with actual link -->
+[CHAT_BOT](https://rococo-haupia-46c5e9.netlify.app/) <!-- Replace with actual link -->
 
 ## 🛠️ Built With
 - HTML, CSS, JavaScript
