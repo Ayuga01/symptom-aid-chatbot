@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Symptom & First Aid Chatbot</title>
+  <style>
+    html, body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      position: fixed;
+      position: relative;
+      top: 0;
+      width: 100%;
+      z-index: 998;
+      box-shadow: none !important;
+      border: none !important;
+      border-bottom: none !important;
+      border-top: none !important;
+      outline: none !important;
+      margin: 0;
+      box-sizing: border-box;
+      -webkit-box-shadow: none !important;
+      -moz-box-shadow: none !important;
+      text-shadow: none !important;
+    }
+    header::after,
+    header::before {
+      display: none !important;
+    }
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 200px;
+      background-color: #f0f0f0;
+      padding: 1rem;
+      overflow-y: auto;
+      z-index: 1001;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    body.dark #sidebar {
+      background-color: #2b2b2b;
+      color: white;
+    }
+    #sidebar h3 {
+      margin-top: 0;
+    }
+    #sidebar button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    #sidebar ul li {
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 5px;
+      transition: background-color 0.2s ease;
+    }
+    
+    /* Selected chat styling */
+    .remove-title {
+      float: right;
+      font-size: 1.2rem;
+      color: red;
+      cursor: pointer;
+      padding: 0.1rem 0.5rem 0 0.5rem;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+      line-height: 1;
+      display: flex;
+      align-items: flex-start;
+      height: 100%;
+    }
+
+    .remove-title:hover {
+      background-color: rgba(255, 0, 0, 0.1);
+    }
+
+    .title-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      max-width: calc(100% - 30px);
+      vertical-align: middle;
+    }
+    #sidebar ul li.selected {
+      background-color: rgba(76, 175, 80, 0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(76, 175, 80, 0.5);
+      color: #2e7d32;
+      font-weight: 500;
+    }
+    
+    /* Hover effect for non-selected chats */
+    #sidebar ul li:not(.selected):hover {
+      background-color: #e0e0e0;
+    }
+    
+    body.dark #sidebar ul li:not(.selected):hover {
+      background-color: #404040;
+    }
+    
+    body.dark #sidebar ul li.selected {
+      background-color: rgba(62, 142, 65, 0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(62, 142, 65, 0.5);
+      color: #81c784;
+      font-weight: 500;
+    }
+    
+    #modeToggle {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 1rem;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    body.dark #modeToggle {
+      background-color: #3e8e41;
+    }
+    #main {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      margin-top: 0;
+      margin-left: 220px;
+      height: 100vh;
+      border-top: none;
+    }
+    #chatbox {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      background: inherit;
+    }
+    .message { max-width: 70%; margin: 0.5rem 0; padding: 0.7rem 1rem; border-radius: 10px; line-height: 1.4; white-space: pre-wrap; }
+    .user { background: #dcf8c6; align-self: flex-end; }
+    .bot { background: #e0e0e0; align-self: flex-start; }
+    #input-area {
+      display: flex;
+      padding: 1rem;
+      background: #eee;
+    }
+    #input-area input { flex: 1; padding: 0.7rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 5px; }
+    #input-area button { margin-left: 0.5rem; padding: 0.7rem 1.2rem; font-size: 1rem; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+
+    body.dark {
+      background: #1e1e1e;
+      color: #f0f0f0;
+    }
+    body.dark header {
+      background: #4CAF50;
+      border: none !important;
+      border-bottom: none !important;
+      border-top: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+      margin: 0;
+      -webkit-box-shadow: none !important;
+      -moz-box-shadow: none !important;
+      text-shadow: none !important;
+    }
+    body.dark header::after,
+    body.dark header::before {
+      display: none !important;
+    }
+    body.dark #chatbox {
+      background: #2a2a2a;
+    }
+    body.dark .user {
+      background: #3e8e41;
+      color: white;
+    }
+
+    body.dark.protanopia .user {
+      color: #000;
+    }
+    body.dark.deuteranopia .user {
+      color: #000;
+    }
+    body.dark.tritanopia .user {
+      color: #000;
+    }
+    body.dark .bot {
+      background: #444;
+      color: white;
+    }
+    body.dark #input-area {
+      background: #333;
+    }
+    body.dark input {
+      background: #222;
+      color: white;
+      border: 1px solid #555;
+    }
+    body.dark button {
+      background-color: #3e8e41;
+    }
+
+
+    /* Color blindness support */
+    body.protanopia {
+      background: #e3f6f5;
+    }
+    body.protanopia header,
+    body.protanopia #input-area,
+    body.protanopia #chatbox {
+      background: #c1e8e5;
+    }
+
+    body.protanopia header {
+      background-color: #8adbd5;
+    }
+    body.protanopia .user {
+      background: #a6e3e9; /* adjusted for red deficiency */
+    }
+
+    body.deuteranopia {
+      background: #eef7e1;
+    }
+    body.deuteranopia header,
+    body.deuteranopia #input-area,
+    body.deuteranopia #chatbox {
+      background: #d8f0c3;
+    }
+
+    body.deuteranopia header {
+      background-color: #aedf8e;
+    }
+    body.deuteranopia .user {
+      background: #bfe6a6; /* adjusted for green deficiency */
+    }
+
+    body.tritanopia {
+      background: #fef6e4;
+    }
+    body.tritanopia header,
+    body.tritanopia #input-area,
+    body.tritanopia #chatbox {
+      background: #fde2b8;
+    }
+
+    body.tritanopia header {
+      background-color: #f1c97d;
+    }
+    body.tritanopia .user {
+      background: #f4d6a6; /* adjusted for blue deficiency */
+    }
+
+    /* Dark mode variants for color blindness */
+    body.dark.protanopia {
+      background: #1e2b2e;
+    }
+    body.dark.protanopia header,
+    body.dark.protanopia #input-area,
+    body.dark.protanopia #chatbox {
+      background: #2e3d3f;
+    }
+
+    body.dark.protanopia header {
+      background-color: #264344;
+    }
+
+    body.dark.deuteranopia {
+      background: #202a1e;
+    }
+    body.dark.deuteranopia header,
+    body.dark.deuteranopia #input-area,
+    body.dark.deuteranopia #chatbox {
+      background: #2d3f22;
+    }
+
+    body.dark.deuteranopia header {
+      background-color: #2d4f2c;
+    }
+
+    body.dark.tritanopia {
+      background: #2a2620;
+    }
+    body.dark.tritanopia header,
+    body.dark.tritanopia #input-area,
+    body.dark.tritanopia #chatbox {
+      background: #3c331e;
+    }
+
+    body.dark.tritanopia header {
+      background-color: #3f3827;
+    }
+
+    #settingsPanel {
+      position: fixed;
+      top: 4.5rem; /* move it below the header */
+      left: 200px; /* place it beside the sidebar */
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+      z-index: 1000;
+      background: inherit;
+      padding: 0.5rem 1rem;
+    }
+    #colorBlindToggle {
+      padding: 0.4rem;
+      border-radius: 5px;
+    }
+
+    header #colorToggleContainer {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.9rem;
+      color: inherit;
+    }
+
+    header #colorBlindToggle {
+      background: rgba(255, 255, 255, 0.8);
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      padding: 0.3rem;
+    }
+
+    body.dark header #colorBlindToggle {
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+    }
+
+    .loading {
+      font-style: italic;
+      opacity: 0.6;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+      100% { opacity: 0.3; }
+    }
+    .dots::after {
+      content: '';
+      animation: dotPulse 1.2s infinite steps(3, end);
+    }
+
+    @keyframes dotPulse {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+      100% { content: '.'; }
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      background-color: #ccc;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transition: 0.4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar">
+    <div id="sidebarTop">
+      <h3>HealthBot</h3>
+      <button onclick="startNewChat()">+ New Chat</button>
+      <ul id="chatTitles"></ul>
+    </div>
+    <div id="sidebarBottom">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <label class="switch">
+          <input type="checkbox" id="modeToggle" onchange="toggleMode()">
+          <span class="slider round"></span>
+        </label>
+        <span id="modeLabel">Light Mode</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsPanel">
+  </div>
+  <header>
+    HealthBot - Symptom & First Aid Assistant
+    <div id="colorToggleContainer">
+      <label for="colorBlindToggle"><select id="colorBlindToggle" onchange="applyColorBlindMode()">
+        <option value="">Normal Vision</option>
+        <option value="protanopia">Protanopia</option>
+        <option value="deuteranopia">Deuteranopia</option>
+        <option value="tritanopia">Tritanopia</option>
+      </select></label>
+    </div>
+  </header>
+  <div id="main">
+    <div id="chatbox"></div>
+    <div id="input-area">
+      <input type="text" id="userInput" placeholder="Describe your symptoms...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = "AIzaSyD50cvqdTv3nkIENT7OCvLXtiSll0aoIqg"; // ⚠️ Don't expose in production!
+    const chatbox = document.getElementById('chatbox');
+    const userInput = document.getElementById('userInput');
+
+    userInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent form submission or newline
+        sendMessage();
+      }
+    });
+
+    // Chat sessions management
+    let chatSessions = [];
+    let currentSessionIndex = 0;
+    let history = [];
+
+    function addMessage(message, sender, loading = false) {
+      const div = document.createElement('div');
+      div.className = 'message ' + sender;
+      if (sender === 'bot') {
+        if (loading) {
+          message = '<span class="loading"><span class="dots">.</span></span>';
+        } else {
+          message = message
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/^\* (.*$)/gm, '<li>$1</li>');
+          if (message.includes('<li>')) {
+            message = '<ul>' + message + '</ul>';
+          }
+        }
+      }
+      div.innerHTML = message;
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Function to generate a creative title using Gemini
+    async function generateChatTitle(userMessage) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              { 
+                role: "user", 
+                parts: [{ 
+                  text: `Create a short, creative, and descriptive title (max 25 characters) for a health chat that starts with this message: "${userMessage}". The title should be medical/health related and capture the main concern. Examples: "🩹 Headache Relief", "🫁 Breathing Issues", "💊 Stomach Pain", "🏥 Emergency Help". Only return the title, nothing else.` 
+                }] 
+              }
+            ],
+            generationConfig: {
+              temperature: 0.8,
+              maxOutputTokens: 50
+            }
+          })
+        });
+
+        const data = await response.json();
+        if (data && data.candidates && data.candidates.length > 0) {
+          const parts = data.candidates[0]?.content?.parts;
+          if (parts && parts.length > 0) {
+            return parts[0].text.trim().slice(0, 25);
+          }
+        }
+      } catch (error) {
+        console.error("Error generating title:", error);
+      }
+      
+      // Fallback to simple title if API fails
+      return userMessage.slice(0, 20) + '...';
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      const lowerText = text.toLowerCase();
+      const isGreeting = ["hi", "hello", "hey"].includes(lowerText);
+
+      // Create new chat session if none exists
+      if (chatSessions.length === 0) {
+        startNewChat();
+      }
+
+      addMessage(text, 'user');
+
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'message bot';
+      loadingEl.innerHTML = '<span class="loading"><span class="dots">.</span></span>';
+      chatbox.appendChild(loadingEl);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      userInput.value = '';
+      
+      // Add user message to history
+      history.push({ role: 'user', parts: [{ text }] });
+      chatSessions[currentSessionIndex].history = [...history]; // Create a copy
+
+      // Generate title if this is the first message in the current session
+      if (history.length === 1) { // Only user message in history means first message
+        generateChatTitle(text).then(title => {
+          chatSessions[currentSessionIndex].title = title;
+          renderChatTitles();
+        });
+      }
+
+      // Handle greeting separately
+      if (isGreeting) {
+        const greetingReply = "Hello! I'm here to help you with symptoms or first aid advice. How can I assist you today?";
+        chatbox.removeChild(loadingEl);
+        addMessage(greetingReply, 'bot');
+        history.push({ role: 'model', parts: [{ text: greetingReply }] });
+        chatSessions[currentSessionIndex].history = [...history]; // Create a copy
+        return;
+      }
+
+      try {
+        console.log("Sending to Gemini API:", JSON.stringify({ contents: [
+          { role: "user", parts: [{ text: "You are HealthBot, a polite and intelligent health assistant. Keep your replies short, focused, and helpful. Provide relevant first aid guidance and always ask a follow-up question to better understand the user's symptoms. Avoid long lists unless necessary, and never give medical diagnoses or prescriptions. Recommend seeing a doctor if symptoms sound serious." }] },
+          ...history
+        ] }, null, 2));
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              { role: "user", parts: [{ text: "You are HealthBot, a polite and intelligent health assistant. Keep your replies short, focused, and helpful. Provide relevant first aid guidance and always ask a follow-up question to better understand the user's symptoms. Avoid long lists unless necessary, and never give medical diagnoses or prescriptions. Recommend seeing a doctor if symptoms sound serious." }] },
+              ...history
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              topK: 1,
+              topP: 1,
+              maxOutputTokens: 400
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: 3 },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: 3 },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: 3 },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: 3 }
+            ]
+          })
+        });
+
+        const data = await response.json();
+        console.log("Gemini API response:", data);
+        if (data.error) {
+          console.error("API Error:", data.error);
+          chatbox.removeChild(loadingEl);
+          addMessage("There was an issue with the API: " + data.error.message, 'bot');
+          return;
+        }
+
+        let reply = "Sorry, I couldn't understand that.";
+        if (data && data.candidates && data.candidates.length > 0) {
+          const parts = data.candidates[0]?.content?.parts;
+          if (parts && parts.length > 0) {
+            reply = parts[0].text;
+          }
+        }
+
+        chatbox.removeChild(loadingEl);
+        addMessage(reply, 'bot');
+        history.push({ role: 'model', parts: [{ text: reply }] });
+        chatSessions[currentSessionIndex].history = [...history]; // Create a copy
+
+      } catch (error) {
+        console.error("Network or JSON error:", error);
+        chatbox.removeChild(loadingEl);
+        addMessage("An unexpected error occurred: " + error.message, 'bot');
+      }
+    }
+
+    function toggleMode() {
+      const isDark = document.body.classList.toggle('dark');
+      const modeToggle = document.getElementById('modeToggle');
+      const modeLabel = document.getElementById('modeLabel');
+      modeToggle.checked = isDark;
+      modeLabel.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+    }
+
+    function applyColorBlindMode() {
+      const mode = document.getElementById('colorBlindToggle').value;
+      document.body.classList.remove('protanopia', 'deuteranopia', 'tritanopia');
+
+      // Re-trigger theme update for user messages (force reflow)
+      const userMessages = document.querySelectorAll('.message.user');
+      userMessages.forEach(msg => {
+        msg.classList.remove('user');
+        void msg.offsetWidth; // force reflow
+        msg.classList.add('user');
+      });
+
+      if (mode) {
+        document.body.classList.add(mode);
+      }
+    }
+
+    // Start a new chat session with a title
+    function startNewChat(title = "") {
+      const session = { title, history: [] };
+      chatSessions.push(session);
+      currentSessionIndex = chatSessions.length - 1;
+      history = []; // Reset history for new chat
+      renderChatTitles();
+      chatbox.innerHTML = '';
+      userInput.focus();
+    }
+
+    // Render the chat titles in the sidebar
+    function renderChatTitles() {
+      const list = document.getElementById('chatTitles');
+      list.innerHTML = '';
+      chatSessions.forEach((session, index) => {
+        if (session.title.trim() !== "") {
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="title-text">${session.title}</span><span class="remove-title" title="Delete Chat">×</span>`;
+          li.addEventListener('click', (e) => {
+            // Only switch chat if clicking on the title, not the remove button
+            if (!e.target.classList.contains('remove-title')) {
+              switchChat(index);
+            }
+          });
+          // Remove chat on clicking the remove-title span, with confirmation
+          li.querySelector('.remove-title').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm("Are you sure you want to delete this chat?")) {
+              chatSessions.splice(index, 1);
+              // adjust currentSessionIndex if necessary
+              if (currentSessionIndex >= chatSessions.length) {
+                currentSessionIndex = chatSessions.length - 1;
+              }
+              if (currentSessionIndex < 0) {
+                currentSessionIndex = 0;
+                history = [];
+                chatbox.innerHTML = '';
+              } else {
+                history = chatSessions[currentSessionIndex]?.history ? [...chatSessions[currentSessionIndex].history] : [];
+                chatbox.innerHTML = '';
+                history.forEach(entry => {
+                  const sender = entry.role === 'user' ? 'user' : 'bot';
+                  addMessage(entry.parts[0].text, sender);
+                });
+              }
+              renderChatTitles();
+            }
+          });
+
+          li.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            contextChatIndex = index;
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.display = 'block';
+          });
+
+          if (index === currentSessionIndex) {
+            li.classList.add('selected');
+          }
+
+          list.appendChild(li);
+        }
+      });
+    }
+
+    // Switch to a different chat session
+    function switchChat(index) {
+      currentSessionIndex = index;
+      history = [...chatSessions[currentSessionIndex].history]; // Create a copy
+      chatbox.innerHTML = '';
+      history.forEach(entry => {
+        const sender = entry.role === 'user' ? 'user' : 'bot';
+        addMessage(entry.parts[0].text, sender);
+      });
+      
+      // Update the visual selection
+      renderChatTitles();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const isDark = document.body.classList.contains('dark');
+      document.getElementById('modeToggle').checked = isDark;
+      document.getElementById('modeLabel').textContent = isDark ? 'Dark Mode' : 'Light Mode';
+    });
+
+    // --- Custom Context Menu for Chat Titles ---
+    const contextMenu = document.getElementById('chatContextMenu');
+    let contextChatIndex = null;
+
+    document.addEventListener('click', () => {
+      contextMenu.style.display = 'none';
+    });
+
+  </script>
+</body>
+</html>
